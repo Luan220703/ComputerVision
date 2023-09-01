@@ -38,7 +38,7 @@ def harris_corner_detector(image, threshold=0.01, k=0.04):
     return corners
 
 # Load the image
-image = cv2.imread(r"C:\Users\HOME\Downloads\234.jpg")
+image = cv2.imread(r"C:\Users\HOME\Downloads\chess.jpg")
 
 # Apply Harris corner detection
 corners = harris_corner_detector(image)
@@ -80,31 +80,51 @@ print("HOG features:", hog_features)
 
 
 
-def apply_canny(image, threshold1, threshold2):
-    # Convert the image to grayscale
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+# Load the input image
+image = cv2.imread(r"C:\Users\HOME\Downloads\Tuan cui 2.jpg", cv2.IMREAD_GRAYSCALE)
 
-    # Apply Gaussian blur to reduce noise
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+# Apply Gaussian blur to reduce noise
+blurred = cv2.GaussianBlur(image, (5, 5), 0)
 
-    # Apply Canny edge detection
-    edges = cv2.Canny(blurred, threshold1, threshold2)
+# Calculate gradients in the x and y directions using Sobel filters
+gradient_x = cv2.Sobel(blurred, cv2.CV_64F, 1, 0, ksize=3)
+gradient_y = cv2.Sobel(blurred, cv2.CV_64F, 0, 1, ksize=3)
 
-    return edges
+# Calculate the magnitude and direction of gradients
+gradient_magnitude = np.sqrt(gradient_x**2 + gradient_y**2)
+gradient_direction = np.arctan2(gradient_y, gradient_x)
 
-# Load the image
-image = cv2.imread(r"C:\Users\HOME\Downloads\Tuan cui 2.jpg")
+# Non-maximum suppression
+edges = np.zeros_like(gradient_magnitude)
+for i in range(1, gradient_magnitude.shape[0] - 1):
+    for j in range(1, gradient_magnitude.shape[1] - 1):
+        angle = gradient_direction[i, j]
+        if (0 <= angle < np.pi/4) or (7*np.pi/4 <= angle < 2*np.pi):
+            neighbor1 = gradient_magnitude[i, j + 1]
+            neighbor2 = gradient_magnitude[i, j - 1]
+        elif (np.pi/4 <= angle < 3*np.pi/4) or (5*np.pi/4 <= angle < 7*np.pi/4):
+            neighbor1 = gradient_magnitude[i - 1, j]
+            neighbor2 = gradient_magnitude[i + 1, j]
+        elif (3*np.pi/4 <= angle < 5*np.pi/4) or (np.pi/4 <= angle < 3*np.pi/4):
+            neighbor1 = gradient_magnitude[i - 1, j + 1]
+            neighbor2 = gradient_magnitude[i + 1, j - 1]
+        else:
+            neighbor1 = gradient_magnitude[i - 1, j - 1]
+            neighbor2 = gradient_magnitude[i + 1, j + 1]
+        if gradient_magnitude[i, j] >= neighbor1 and gradient_magnitude[i, j] >= neighbor2:
+            edges[i, j] = gradient_magnitude[i, j]
 
-# Apply Canny edge detection
-threshold1 = 50  # Lower threshold
-threshold2 = 150  # Upper threshold
-edges = apply_canny(image, threshold1, threshold2)
+# Apply double thresholding and hysteresis to obtain final edges
+low_threshold = 10
+high_threshold = 100
+edges = np.where(edges >= high_threshold, 255, np.where(edges >= low_threshold, 50, 0))
 
-# Display the original image and the edges
-cv2.imshow("Original Image", image)
-cv2.imshow("Canny Edges", edges)
+# Display the original image and the detected edges
+cv2.imshow('Original Image', image)
+cv2.imshow('Edges', edges.astype(np.uint8))
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+
 
 
 def detect_lines(image):
@@ -134,6 +154,7 @@ result = detect_lines(image)
 cv2.imshow("Line Detection Result", result)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+
 
 
 

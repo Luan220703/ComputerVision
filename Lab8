@@ -1,0 +1,63 @@
+import cv2
+import numpy as np
+
+def recognize_faces(input_image):
+    # Load the pre-trained face detection model from OpenCV
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+    # Load the input image
+    image = cv2.imread(input_image)
+
+    # Convert the image to grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Detect faces in the image
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+
+    # If no faces are detected, return an empty list
+    if len(faces) == 0:
+        return []
+
+    # Load the pre-trained face recognition model from OpenCV
+    model = cv2.face.EigenFaceRecognizer_create()
+
+    # Load the pre-trained face recognition model weights
+    model.read('eigenfaces_model.xml')
+
+    recognized_faces = []
+
+    # Iterate over the detected faces
+    for (x, y, w, h) in faces:
+        # Crop the face region from the grayscale image
+        face = gray[y:y+h, x:x+w]
+
+        # Resize the face image to a fixed size
+        face = cv2.resize(face, (100, 100))
+
+        # Recognize the face using the Eigenfaces algorithm
+        label, confidence = model.predict(face)
+
+        # If the confidence is below a certain threshold, consider it as a recognized face
+        if confidence < 3000:
+            recognized_faces.append((label, confidence, (x, y, w, h)))
+
+    return recognized_faces
+
+
+# Main program
+def main():
+    # Create an application with an interface to perform mouse actions (not implemented in this code)
+
+    # Choose the input image
+    input_image = 'input_image.jpg'
+
+    # Click recognition button to recognize faces in the input image
+    recognized_faces = recognize_faces(input_image)
+
+    # Print the recognized faces
+    for (label, confidence, (x, y, w, h)) in recognized_faces:
+        print(f"Recognized face with label {label} and confidence {confidence} at coordinates ({x}, {y}, {w}, {h})")
+
+
+if __name__ == '__main__':
+    main()
