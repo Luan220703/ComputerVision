@@ -1,2 +1,2 @@
 # ComputerVision
-all the applications of Computer Vision in life
+Toàn bộ code của môn Computer Vision ở đại học FPT 
